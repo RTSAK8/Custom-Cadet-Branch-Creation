@@ -1,0 +1,56 @@
+﻿ccb_restriction_scope_rule = {
+	default = ccb_restrict_ai
+	categories = { ccb_cadet_branch_rules }
+	ccb_restrict_ai = { }
+	ccb_restrict_players = { }
+	ccb_restrict_all = { }
+}
+
+ccb_special_creation_rule = {
+	default = ccb_special_vanilla
+	categories = { ccb_cadet_branch_rules }
+	ccb_special_vanilla = { }
+	ccb_special_follow = { }
+	ccb_special_blocked = { }
+}
+
+ccb_distance_rule = {
+	default = ccb_distance_no_exemption
+	categories = { ccb_cadet_branch_rules }
+	ccb_distance_no_exemption = { }
+	ccb_distance_exempt = { }
+}
+
+ccb_independence_rule = {
+	default = ccb_independence_none
+	categories = { ccb_cadet_branch_rules }
+	ccb_independence_none = { }
+	ccb_independence_required = { }
+}
+
+ccb_relative_rank_rule = {
+	default = ccb_relative_rank_none
+	categories = { ccb_cadet_branch_rules }
+	ccb_relative_rank_none = { }
+	ccb_relative_rank_not_lower = { }
+	ccb_relative_rank_higher = { }
+}
+
+ccb_rank_rule = {
+	default = ccb_rank_none
+	categories = { ccb_cadet_branch_rules }
+	ccb_rank_none = { }
+	ccb_rank_duchy = { }
+	ccb_rank_kingdom = { }
+	ccb_rank_empire = { }
+}
+
+ccb_prestige_rule = {
+	default = ccb_prestige_none
+	categories = { ccb_cadet_branch_rules }
+	ccb_prestige_none = { }
+	ccb_prestige_2 = { }
+	ccb_prestige_3 = { }
+	ccb_prestige_4 = { }
+	ccb_prestige_5 = { }
+}

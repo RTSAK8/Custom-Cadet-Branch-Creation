@@ -1,0 +1,77 @@
+﻿# Character scope: prospective founder. These checks belong at voluntary entry points.
+# Keep the shared creation effects unchanged for automatic government/title transitions.
+ccb_merchant_creation_allowed_trigger = {
+	trigger_if = {
+		limit = {
+			gdp_merchant_can_reclaim_house_company_title_trigger = no
+			gdp_merchant_needs_cadet_for_new_company_trigger = yes
+		}
+		custom_tooltip = {
+			text = ccb_gdp_creation_policy_tt
+			ccb_special_creation_allowed_trigger = yes
+		}
+	}
+}
+
+ccb_republic_creation_allowed_trigger = {
+	trigger_if = {
+		limit = {
+			exists = house.house_head
+			is_house_head = no
+		}
+		custom_tooltip = {
+			text = ccb_gdp_creation_policy_tt
+			ccb_special_creation_allowed_trigger = yes
+		}
+	}
+}
+
+# Character scope is scope:actor; scope:recipient is the prospective estate giver.
+# Predict the branch before destroy_merchant_effect removes company titles and rank.
+ccb_merchant_estate_needs_branch_trigger = {
+	exists = house.house_head
+	is_house_head = no
+	OR = {
+		# The explicit branch in gdp_merchant_procures_estate_effect.
+		house = {
+			any_house_member = {
+				this != scope:actor
+				top_liege = scope:recipient.top_liege
+				any_held_title = { is_noble_family_title = yes }
+			}
+		}
+		# The fallback in create_noble_family_effect, after joining the giver's court.
+		NOT = {
+			house.house_head = {
+				is_ai = yes
+				NOT = { any_held_title = { is_noble_family_title = yes } }
+				OR = {
+					NOT = { exists = liege }
+					AND = {
+						top_liege = scope:recipient.top_liege
+						OR = {
+							is_ruler = no
+							# Only titles surviving liquidation count for taking over house headship.
+							scope:actor = {
+								any_held_title = {
+									NOT = { has_variable = merchant_creation_reason }
+									tier > scope:actor.house.house_head.highest_held_title_tier
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+ccb_merchant_estate_allowed_trigger = {
+	trigger_if = {
+		limit = { ccb_merchant_estate_needs_branch_trigger = yes }
+		custom_tooltip = {
+			text = ccb_gdp_creation_policy_tt
+			ccb_special_creation_allowed_trigger = yes
+		}
+	}
+}

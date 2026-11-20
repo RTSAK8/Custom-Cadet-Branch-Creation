@@ -1,0 +1,502 @@
+﻿become_merchant_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/event_story/gdp_decision_become_merchant.dds"
+	}
+	sort_order = 41
+	decision_group_type = realm
+
+	ai_check_interval = 0
+
+	desc = become_merchant_decision_desc
+	selection_tooltip = become_merchant_decision_tooltip
+
+	is_shown = {
+		# DLC check
+		has_gdp_dlc_trigger = yes
+		# House check
+		exists = house.house_head
+		OR = {
+			government_has_flag = government_is_landless_adventurer
+			government_has_flag = government_is_republic
+			is_landed = yes
+			AND = {
+				government_has_mechanic = administrative
+				top_liege = this
+				is_landed = no
+			}
+		}
+		# Relevant cultures/faiths
+		OR = {
+			government_has_flag = government_is_landless_adventurer
+			culture = { has_cultural_parameter = unlock_voluntary_mercantilism }
+			AND = {
+				government_has_mechanic = administrative
+				top_liege = this
+				is_landed = no
+			}
+		}
+	}
+
+	is_valid = {
+		ccb_merchant_creation_allowed_trigger = yes
+		trigger_if = { # Triggers for non-laamps
+			limit = {
+				NOT = { government_has_flag = government_is_landless_adventurer }
+			}
+			gdp_is_valid_for_merchant_trigger = yes
+			# Is not HOF
+			custom_tooltip = {
+				text = become_landless_adventurer_decision_hof_tt
+				faith.religious_head_title.holder != root
+			}
+			# Counts and dukes only
+			custom_tooltip = {
+				text = become_landless_adventurer_decision_tier_tt
+				highest_held_title_tier >= tier_county
+				highest_held_title_tier <= tier_duchy
+			}
+			# Not too big
+			custom_tooltip = {
+				text = become_landless_adventurer_decision_domain_size_tt
+				domain_size <= 3
+			}
+			# Must be a house head
+			custom_tooltip = {
+				text = become_merchant_decision_house_head_tt
+				is_house_head = yes
+			}
+			# Relevant cultures/faiths
+			trigger_if = {
+				limit = {
+					NOT = { government_allows = profit_trade_routes }
+				}
+				trigger_if = {
+					limit = {
+						OR = {
+							is_ai = yes
+							NOT = { government_has_mechanic = administrative }
+							top_liege != this
+							is_landed = yes
+						}
+					}
+					culture = { has_cultural_parameter = unlock_voluntary_mercantilism }
+				}
+			}
+		}
+		trigger_else_if = {
+			limit = {
+				exists = var:gdp_recently_became_adventurer_cooldown
+			}
+			custom_tooltip = {
+				text = gdp_recently_became_adventurer_decision_cooldown_tt
+				NOT = { exists = var:gdp_recently_became_adventurer_cooldown }
+				government_has_flag = government_is_landless_adventurer
+			}
+		}
+		trigger_else = { # trigger for laamps
+			custom_tooltip = {
+				text = landless_government_tt
+				government_has_flag = government_is_landless_adventurer
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		is_at_war = no
+		is_alive = yes
+		is_available_adult = yes
+		has_contagious_deadly_disease_trigger = no
+	}
+
+	effect = {
+		save_scope_as = merchant
+		custom_tooltip = become_merchant_tt
+		# A camp has no realm to pass on, so it gets no inheritor
+		if = {
+			limit = {
+				NOT = { government_has_flag = government_is_landless_adventurer }
+			}
+			if = {
+				limit = {
+					player_heir ?= {
+						this != root
+						is_adult = yes
+					}
+				}
+				player_heir = {
+					save_scope_as = laamp_heir
+					save_scope_as = laamp_inheritor
+					custom_tooltip = become_landless_adventurer_decision_title_scope_tt
+				}
+			}
+			else_if = {
+				limit = { top_liege != this }
+				liege = {
+					save_scope_as = laamp_liege
+					save_scope_as = laamp_inheritor
+					custom_tooltip = become_landless_adventurer_decision_title_scope_tt
+				}
+			}
+			else = {
+				custom_tooltip = become_landless_adventurer_decision_title_created_tt
+				if = {
+					limit = {
+						NOT = { exists = scope:laamp_inheritor }
+					}
+					hidden_effect_new_object = {
+						create_character = {
+							template = laamp_inheritor_template
+							culture = root.capital_county.culture
+							faith = root.capital_county.faith
+							dynasty = generate
+							location = root.capital_province
+							after_creation = {
+								save_scope_as = laamp_inheritor
+								add_character_flag = new_laamp_inheritor
+							}
+						}
+					}
+				}
+			}
+		}
+		show_as_tooltip = {
+			add_character_modifier = {
+				modifier = gdp_voluntary_merchant_modifier
+				years = 5
+			}
+		}
+		# Save scopes for loc
+		primary_title = { save_scope_as = old_primary_title }
+		capital_province = { save_scope_as = old_capital_province }
+		if = {
+			limit = { top_liege != this }
+			liege = { save_scope_as = old_liege }
+		}
+		trigger_event = { id = gdp_merchant.0001 }
+		# Debug tracking
+		if = {
+			limit = {
+				is_ai = yes
+				debug_only = yes
+			}
+			if = {
+				limit = { exists = global_var:ai_voluntary_merchant_count }
+				change_global_variable = {
+					name = ai_voluntary_merchant_count
+					add = 1
+				}
+			}
+			else = {
+				set_global_variable = {
+					name = ai_voluntary_merchant_count
+					value = 1
+				}
+			}
+			debug_log = "AI became merchant voluntarily"
+			debug_log_scopes = yes
+		}
+		custom_tooltip = lose_all_prestige_tt
+		custom_tooltip = lose_all_prestige_level_tt
+		show_as_tooltip = {
+			stress_impact = {
+				craven = minor_stress_impact_gain
+				content = minor_stress_impact_gain
+				lazy = minor_stress_impact_gain
+			}
+		}
+	}
+
+	ai_potential = {
+		is_valid_for_laampdom = yes
+	}
+
+	ai_will_do = {
+		base = -75
+		modifier = { add = merchant_chance_score_value }
+	}
+}
+
+gdp_adopt_republic_government_decision = {
+	title = gdp_adopt_republic_government_decision
+	desc = gdp_adopt_republic_government_decision_desc
+	selection_tooltip = gdp_adopt_republic_government_decision_tooltip
+	picture = {
+		reference = "gfx/interface/illustrations/event_story/gdp_republican.dds"
+	}
+
+	sort_order = 40
+	decision_group_type = realm
+
+	cost = {
+		prestige = {
+			value = monumental_prestige_value
+			if = {
+				limit = { primary_title.tier >= tier_kingdom }
+				multiply = 4
+			}
+			else_if = {
+				limit = { primary_title.tier = tier_duchy }
+				multiply = 2
+			}
+		}
+		gold = {
+			value = 200
+			if = {
+				limit = { primary_title.tier >= tier_kingdom }
+				multiply = 8
+			}
+			else_if = {
+				limit = { primary_title.tier = tier_duchy }
+				multiply = 4
+			}
+		}
+	}
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 240
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	is_shown = {
+		gdp_basic_can_adopt_republic_government_trigger = yes
+	}
+
+	is_valid = {
+		ccb_republic_creation_allowed_trigger = yes
+		save_temporary_scope_as = founding_ruler
+		prestige_level >= 3
+		capital_county = {
+			popular_opinion >= 20
+		}
+		sub_realm_size < 25 # Large realm should just become admin instead
+		capital_province = {
+			province_size_level >= 3
+		}
+		OR = {
+			is_independent_ruler = yes
+			trigger_if = {
+				limit = {
+					has_variable = has_liege_permission_to_found_republic
+					var:has_liege_permission_to_found_republic = liege
+				}
+				custom_tooltip = {
+					text = liege_has_granted_city_charter_duration
+					has_variable = has_liege_permission_to_found_republic
+					var:has_liege_permission_to_found_republic = liege
+				}
+			}
+			trigger_else = {
+				custom_tooltip = {
+					text = liege_has_granted_city_charter
+					has_variable = has_liege_permission_to_found_republic
+					var:has_liege_permission_to_found_republic = liege
+				}
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		is_available_quick = {
+			adult = yes
+			at_war = no
+			imprisoned = no
+			incapable = no
+		}
+	}
+
+	effect = {
+		show_as_tooltip = { # Actual effect is applied in follow-up event
+			gdp_found_a_republic_effect = yes
+		}
+		trigger_event = republic_event.0001
+	}
+
+	ai_potential = {
+		# AI rulers will only attempt to become republics if their capital is in an acceptable location
+		capital_province ?= {
+			geographical_region = world_europe
+		}
+		# And is of a culture we would expect to form republics
+		culture ?= {
+			OR = {
+				# German cities
+				has_cultural_pillar = heritage_central_germanic
+				# Visby
+				has_cultural_pillar = heritage_north_germanic
+				# Italian city states
+				has_cultural_tradition = tradition_republican_legacy
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}
+
+gdp_adopt_republican_ways_decision = {
+	title = gdp_adopt_republican_ways_decision
+	desc = gdp_adopt_republican_ways_decision_desc
+	selection_tooltip = gdp_adopt_republican_ways_decision_tooltip
+	picture = {
+		reference = "gfx/interface/illustrations/event_story/gdp_republican.dds"
+	}
+
+	sort_order = 100
+	decision_group_type = major
+
+	cost = {
+		prestige = 500
+	}
+
+	ai_check_interval_by_tier = {
+		barony = 0
+		county = 120
+		duchy = 60
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	is_shown = {
+		has_gdp_dlc_trigger = yes
+		government_has_flag = government_is_tribal
+		is_landed = yes
+		highest_held_title_tier < tier_kingdom
+	}
+
+	is_valid = {
+		ccb_republic_creation_allowed_trigger = yes
+		save_temporary_scope_as = founding_ruler
+		custom_description = {
+			text = faith_is_reformed
+			subject = root
+			faith = { NOT = { has_doctrine_parameter = unreformed } }
+		}
+		prestige_level >= 2
+		capital_county = {
+			popular_opinion >= 20
+		}
+		highest_held_title_tier < tier_kingdom
+		capital_province.province_size_level >= 3
+		custom_description = { #You need to have 70% of all (non-regional/unique) tribal innovations!
+			text = has_all_tribal_innovations
+			subject = root.culture
+			culture = {
+				calc_true_if = {
+					amount >= 10
+					has_innovation = innovation_motte
+					has_innovation = innovation_catapult
+					has_innovation = innovation_barracks
+					has_innovation = innovation_mustering_grounds
+					has_innovation = innovation_bannus
+					has_innovation = innovation_quilted_armor
+					has_innovation = innovation_pattern_welding
+					has_innovation = innovation_gavelkind
+					has_innovation = innovation_crop_rotation
+					has_innovation = innovation_city_planning
+					has_innovation = innovation_casus_belli
+					has_innovation = innovation_plenary_assemblies
+					has_innovation = innovation_ledger
+					has_innovation = innovation_prosperity_01
+					has_innovation = innovation_currency_01
+				}
+			}
+		}
+		OR = {
+			is_independent_ruler = yes
+			trigger_if = {
+				limit = {
+					has_variable = has_liege_permission_to_found_republic
+					var:has_liege_permission_to_found_republic = liege
+				}
+				custom_tooltip = {
+					text = liege_has_granted_city_charter_duration
+					has_variable = has_liege_permission_to_found_republic
+					var:has_liege_permission_to_found_republic = liege
+				}
+			}
+			trigger_else = {
+				custom_tooltip = {
+					text = liege_has_granted_city_charter
+					has_variable = has_liege_permission_to_found_republic
+					var:has_liege_permission_to_found_republic = liege
+				}
+			}
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		custom_tooltip = {
+			text = permafrost_feudal_ban
+			NOT = { culture = { has_cultural_parameter = permafrost_cannot_become_feudal } }
+		}
+		is_available_quick = {
+			adult = yes
+			at_war = no
+			imprisoned = no
+			incapable = no
+		}
+	}
+
+	effect = {
+		show_as_tooltip = { # Actual effect is applied in follow-up event
+			custom_tooltip = {
+				text = gdp_tribal_capital_becomes_city_tt
+			}
+			custom_tooltip = {
+				text = gdp_other_tribal_holdings_become_castles_tt
+			}
+			if = {
+				limit = {
+					any_vassal_or_below = {
+						government_has_flag = government_is_tribal
+					}
+				}
+				custom_tooltip = {
+					text = gdp_tribal_vassals_will_feudalize_tt
+				}
+			}
+			if = {
+				limit = {
+					any_sub_realm_county = {
+						OR = {
+							has_county_modifier = mpo_siberian_permafrost_modifier
+							has_county_modifier = mpo_siberian_permafrost_modifier_bad
+						}
+					}
+				}
+				custom_tooltip = {
+					text = all_permafrost_will_clear
+				}
+			}
+			gdp_found_a_republic_effect = yes
+		}
+		trigger_event = republic_event.0002
+	}
+
+	ai_potential = {
+		is_independent_ruler = yes
+		NOT = { mpo_has_gok_mongol_empire_trigger = yes }
+		capital_province ?= {
+			is_coastal = yes
+			geographical_region = world_europe
+		}
+		culture ?= {
+			OR = {
+				has_cultural_pillar = heritage_central_germanic
+				has_cultural_pillar = heritage_north_germanic
+				has_cultural_pillar = heritage_east_slavic
+				has_cultural_tradition = tradition_republican_legacy
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 100
+	}
+}

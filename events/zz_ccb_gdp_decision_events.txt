@@ -1,0 +1,72 @@
+﻿namespace = gdp_decision
+
+gdp_decision.3010 = {
+	id_override_priority = 10
+	type = character_event
+	title = gdp_decision.3010.t
+	desc = gdp_decision.3010.desc
+	theme = merchant
+	left_portrait = {
+		character = root
+		animation = steward
+	}
+	right_portrait = {
+		character = scope:sponsored_courtier
+		animation = happiness
+	}
+
+	trigger = {
+		scope:sponsored_courtier ?= {
+			gdp_sponsor_merchant_company_candidate_trigger = { SPONSOR = root }
+		}
+	}
+
+	option = { # Aspiring Business
+		name = gdp_decision.3010.a
+		trigger = {
+			gold >= gdp_sponsor_merchant_company_cost_small_value
+			scope:sponsored_courtier = { ccb_merchant_creation_allowed_trigger = yes }
+		}
+		show_as_unavailable = { always = yes }
+		gdp_sponsor_merchant_company_effect = { SIZE = small }
+		ai_chance = { base = 10 }
+	}
+
+	option = { # Trade Establishment
+		name = gdp_decision.3010.b
+		trigger = {
+			gold >= gdp_sponsor_merchant_company_cost_medium_value
+			scope:sponsored_courtier = { ccb_merchant_creation_allowed_trigger = yes }
+		}
+		show_as_unavailable = { always = yes }
+		gdp_sponsor_merchant_company_effect = { SIZE = medium }
+		ai_chance = { base = 20 }
+	}
+
+	option = { # Prominent Company
+		name = gdp_decision.3010.c
+		trigger = {
+			gold >= gdp_sponsor_merchant_company_cost_large_value
+			scope:sponsored_courtier = { ccb_merchant_creation_allowed_trigger = yes }
+		}
+		show_as_unavailable = { always = yes }
+		gdp_sponsor_merchant_company_effect = { SIZE = large }
+		ai_chance = { base = 30 }
+	}
+
+	option = { # Trade Empire
+		name = gdp_decision.3010.d
+		trigger = {
+			gold >= gdp_sponsor_merchant_company_cost_huge_value
+			scope:sponsored_courtier = { ccb_merchant_creation_allowed_trigger = yes }
+		}
+		show_as_unavailable = { always = yes }
+		gdp_sponsor_merchant_company_effect = { SIZE = huge }
+		ai_chance = { base = 40 }
+	}
+
+	option = { # Change of mind, no cost or cooldown
+		name = gdp_decision.3010.e
+		ai_chance = { base = 0 }
+	}
+}

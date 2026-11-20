@@ -1,0 +1,400 @@
+﻿convert_great_yuan_to_admin_effect = {
+	save_scope_as = administrative_liege
+
+	#Create cadet branch to ensure you have a domicile
+	if = {
+		limit = {
+			exists = house.house_head
+			NOT = {
+				this = house.house_head
+			}
+		}
+		#Create cadet branch
+		ccb_found_house_unchecked_effect = {
+			CHARACTER = scope:administrative_liege
+			PRESTIGE = 0
+		}
+		house = {
+			set_coa = scope:administrative_liege.capital_province.barony
+		}
+	}
+	change_to_administrative_effect = yes
+
+	#Direct Vassals who fulfill the tgp_mongol_vassal_will_become_admin criteria are converted. Vassals above 25 opinion always accept
+	#Vassals are converted as a hierarchy. If a king is converted we convert all who are valid below that king (so his dukes, their counts, and their barons) are all converted.
+	#If a vassal does not convert (because of not accepting or because they are outside of the de jure empire, etc) then the vassals below them are _not_ converted either.
+
+	#Human vassals are given a choice to convert or not in the ping event, even if powerful or having very good relation.
+
+	hidden_effect = {
+		save_scope_as = actor
+		every_vassal = {
+			limit = {
+				tgp_mongol_vassal_will_become_admin = yes
+			}
+			save_scope_as = recipient
+			change_to_administrative_effect = yes
+			every_vassal = { #Everyone below also converts (could be Counts, could be Dukes)
+				limit = {
+					tgp_mongol_vassal_will_become_admin = yes #We still don't want mayors and bishops
+					is_ai = yes
+				}
+				save_scope_as = recipient
+				change_to_administrative_effect = yes
+				every_vassal = { #Everyone below also converts (Could be Counts, could be Barons)
+					limit = {
+						tgp_mongol_vassal_will_become_admin = yes #We still don't want mayors and bishops
+						is_ai = yes
+					}
+					save_scope_as = recipient
+					change_to_administrative_effect = yes
+					every_vassal = { #Everyone below also converts (could be Barons)
+						limit = {
+							tgp_mongol_vassal_will_become_admin = yes #We still don't want mayors and bishops
+							is_ai = yes
+						}
+						save_scope_as = recipient
+						change_to_administrative_effect = yes
+					}
+				}
+			}
+		}
+	}
+
+	if = {
+		limit = {
+			NOT = {
+				has_character_flag = latin_emp_force_admin_flag
+			}
+			top_liege = this
+		}
+		add_character_modifier = {
+			modifier = first_admin_emperor
+		}
+	}
+
+	change_influence = 1500
+	add_treasury = 2500
+
+	every_vassal_or_below = {
+		limit = {
+			is_ai = no
+			tgp_mongol_vassal_will_become_admin = yes
+		}
+		trigger_event = ep3_decisions_event.4065
+	}
+	if = {
+		limit = {
+			exists = capital_county
+			NOT = {
+				domicile.domicile_location.county ?= capital_county
+			}
+		}
+		domicile = {
+			move_domicile = scope:administrative_liege.capital_province
+		}
+	}
+	if = {
+		limit = {
+			tgp_use_chinese_naming_trigger = yes
+			highest_held_title_tier >= tier_empire
+			primary_title = {
+				has_custom_title_name = no
+			}
+		}
+		trigger_event = {
+			id = tgp_dynastic_cycle.9000
+			days = 1
+		}
+	}
+}
+
+procure_estate_interaction_effect = {
+	if = {
+		limit = { scope:piety_option = yes }
+		if = {
+			limit = { faith != scope:recipient.faith }
+			set_character_faith = scope:recipient.faith
+			set_character_rite = scope:recipient.rite
+			add_character_flag = {
+				flag = procure_estate_conversion
+				months = 1
+			}
+		}
+		scope:recipient = {
+			add_piety = {
+				value = procure_estate_interaction_cost_base_piety
+				multiply = 0.5
+			}
+		}
+	}
+	else_if = {
+		limit = { scope:gold_option = yes }
+		show_as_tooltip = {
+			pay_short_term_gold = {
+				target = scope:recipient
+				gold = procure_estate_interaction_cost_base_gold
+			}
+		}
+		hidden_effect = {
+			scope:recipient = { add_gold = procure_estate_interaction_cost_base_gold }
+		}
+	}
+	else_if = {
+		limit = { scope:hook = yes }
+		scope:recipient = {
+			add_hook = {
+				target = scope:actor
+				type = favor_hook
+			}
+		}
+	}
+	else = {
+		scope:recipient = {
+			add_prestige = {
+				value = procure_estate_interaction_cost_base_prestige
+				multiply = 0.25
+			}
+		}
+	}
+	scope:recipient = { change_influence = medium_influence_loss }
+	#Scope:actor becomes ladmin
+	scope:actor = {
+		if = {
+			limit = {
+				scope:actor.house ?= {
+					any_house_member = {
+						any_held_title = { is_noble_family_title = yes }
+						top_liege = scope:recipient.top_liege
+					}
+				}
+			}
+			ccb_found_house_unchecked_effect = {
+				CHARACTER = scope:actor
+				PRESTIGE = major_prestige_gain
+			}
+		}
+		# Note our courtiers so that they don't escape.
+		every_courtier = { add_to_list = courtiers_list }
+		# Change liege, joining the realm with the noble family title before the camp goes, so we are never without titles
+		show_as_tooltip = {
+			create_title_and_vassal_change = {
+				type = swear_fealty
+				add_claim_on_loss = no
+				save_scope_as = title_change
+			}
+			change_liege = {
+				liege = scope:recipient.top_liege
+				change = scope:title_change
+			}
+			resolve_title_and_vassal_change = scope:title_change
+		}
+		create_noble_family_with_liege_effect = {
+			GOVERNMENT_GIVER = scope:recipient
+			LIEGE = scope:recipient.top_liege
+		}
+		destroy_laamp_effect = { ADVENTURER = scope:actor }
+		hidden_effect = {
+			# Return any escaped courtiers.
+			every_in_list = {
+				list = courtiers_list
+				limit = {
+					NOT = { liege_or_court_owner = scope:actor }
+				}
+				scope:actor = { add_courtier = prev }
+			}
+			# And boot any new autogenned arrivals.
+			every_courtier = {
+				limit = {
+					is_lowborn = yes
+					NOR = {
+						is_in_list = courtiers_list
+						is_close_or_extended_family_of = scope:actor
+						is_consort_of = scope:actor
+						has_important_relationship_trigger = { CHARACTER = scope:actor }
+					}
+				}
+				silent_disappearance_effect = yes
+			}
+		}
+		add_character_modifier = {
+			modifier = ep3_administrative_outsider_modifier
+			years = 15
+		}
+		hidden_effect = {
+			domicile ?= {
+				if = {
+					limit = {
+						NOT = { domicile_location = scope:recipient.capital_province }
+					}
+					move_domicile = scope:recipient.capital_province
+				}
+			}
+		}
+	}
+	scope:recipient.top_liege = {
+		if = {
+			limit = {
+				is_ai = no
+			}
+			send_interface_message = {
+				type = msg_landless_adventurer_nearby
+				title = procure_estate_message_title
+				left_icon = scope:actor
+				right_icon = scope:recipient
+				custom_tooltip = procure_estate_message_tt
+			}
+		}
+		every_vassal_or_below = {
+			limit = {
+				is_ai = no
+				NOT = { this = scope:actor }
+			}
+			send_interface_message = {
+				type = msg_landless_adventurer_nearby
+				title = procure_estate_message_title
+				left_icon = scope:actor
+				right_icon = scope:recipient
+				custom_tooltip = procure_estate_message_tt
+			}
+		}
+	}
+}
+
+japan_establish_house_fief_effect = {
+	save_scope_as = house_fiefer
+	save_scope_as = new_head
+	# Dynasty
+	if = {
+		limit = { tgp_japan_cadet_creates_dynasty_trigger = yes }
+		if = {
+			limit = { exists = var:new_japanese_house_name }
+			create_dynasty = {
+				name = {
+					first_valid = {
+						triggered_desc = {
+							trigger = { scope:new_head.var:new_japanese_house_name ?= flag:japanese_house_random_barony }
+							desc = japanese_house_random_barony
+						}
+						triggered_desc = {
+							trigger = { scope:new_head.var:new_japanese_house_name ?= flag:japanese_house_primary_county }
+							desc = japanese_house_primary_county
+						}
+						triggered_desc = {
+							trigger = { scope:new_head.var:new_japanese_house_name ?= flag:japanese_house_domicile_barony }
+							desc = japanese_house_domicile_barony
+						}
+						triggered_desc = {
+							trigger = { scope:new_head.var:new_japanese_house_name ?= flag:japanese_house_domicile_county }
+							desc = japanese_house_domicile_county
+						}
+						triggered_desc = {
+							trigger = { scope:new_head.var:new_japanese_house_name ?= flag:japanese_house_first_name }
+							desc = japanese_house_first_name
+						}
+						triggered_desc = {
+							trigger = { scope:new_head.var:new_japanese_house_name ?= flag:custom }
+							desc = japanese_house_name_custom
+						}
+						desc = japanese_house_name_flag
+					}
+				}
+				save_scope_as = new_dynasty
+			}
+		}
+		else = {
+			create_dynasty = { save_scope_as = new_dynasty }
+		}
+		house = {
+			set_house_name_from_dynasty = house_dynasty
+			save_scope_as = new_house
+		}
+	}
+	# House
+	else_if = {
+		limit = { is_house_head = no }
+		ccb_found_house_unchecked_effect = {
+			CHARACTER = root
+			PRESTIGE = 0
+		}
+	}
+	# Government
+	change_government = japan_feudal_government
+	# Old Dynasty
+	if = {
+		limit = { exists = scope:new_house }
+		# Rename old NF title
+		if = {
+			limit = {
+				scope:old_head ?= this
+				exists = scope:old_nf_title
+			}
+			#scope:old_nf_title = { set_title_name_dynamic = japanese_noble_family_name }
+		}
+		else = {
+			create_noble_family_effect = { GOVERNMENT_GIVER = this }
+			scope:new_title = {
+				#set_title_name_dynamic = japanese_noble_family_name
+				set_coa = scope:new_house
+			}
+		}
+		# Upset old Clan Head
+		scope:old_head ?= {
+			if = {
+				limit = { is_ai = yes }
+				add_opinion = {
+					modifier = established_house_fief_old_clan_head_opinion
+					target = root
+				}
+			}
+			trigger_event = tgp_japan_decision.9005
+		}
+	}
+	# Crime to Regent
+	top_liege ?= {
+		if = {
+			limit = {
+				scope:new_head = {
+					is_landed = yes
+					NOR = {
+						var:petition_liege_house_fief_allowed_flag ?= scope:new_head.top_liege
+						top_liege = {
+							government_has_flag = government_is_japan_feudal
+						}
+					}
+				}
+			}
+			show_as_tooltip = {
+				add_opinion = {
+					modifier = established_house_fief_regent_crime
+					target = scope:new_head
+				}
+			}
+			hidden_effect = {
+				send_interface_message = {
+					type = event_toast_effect_bad
+					title = tgp_japan_establish_house_fief_kampaku_toast
+					left_icon = scope:new_head
+					right_icon = scope:new_head.primary_title
+					show_as_tooltip = {
+						scope:new_head = { change_government = japan_feudal_government }
+					}
+					add_opinion = {
+						modifier = established_house_fief_regent_crime
+						target = scope:new_head
+					}
+				}
+			}
+		}
+	}
+	create_character_memory = { type = establish_house_fief_memory }
+	ordered_memory = {
+		memory_type = establish_house_fief_memory
+		order_by = memory_creation_date
+		set_variable = {
+			name = title
+			value = root.primary_title
+		}
+	}
+	add_achievement_flag_effect = { FLAG = achievement_a_house_of_my_own_flag }
+}

@@ -1,0 +1,130 @@
+﻿found_cadet_house_decision_effect = {
+	if = {
+		limit = {
+			$CHARACTER$ = {
+				OR = {
+					AND = {
+						exists = scope:ccb_authorized_founder
+						this ?= scope:ccb_authorized_founder
+					}
+					# Vanilla claim_cb relocates a landless player house head.
+					AND = {
+						is_house_head = yes
+						is_ai = no
+						is_landed = no
+						exists = scope:claimant
+						house = scope:claimant.house
+					}
+					ccb_special_creation_allowed_trigger = yes
+				}
+			}
+		}
+		ccb_found_house_unchecked_effect = {
+			CHARACTER = $CHARACTER$
+			PRESTIGE = $PRESTIGE$
+		}
+	}
+	else = {
+		# A previous successful iteration must not masquerade as this creation.
+		clear_saved_scope = new_house
+	}
+}
+
+ccb_found_house_unchecked_effect = {
+	$CHARACTER$ = {
+		save_scope_as = new_head
+		add_prestige = $PRESTIGE$
+		hidden_effect_new_object = {
+			create_cadet_house_with_name_effect = yes
+			every_player = {
+				limit = {
+					exists = house
+					scope:new_house ?= house
+					NOT = { this = $CHARACTER$ }
+				}
+				send_interface_toast = {
+					type = msg_created_new_house
+					title = created_cadet_branch_toast_new_house_desc
+					left_icon = scope:new_head
+					desc = created_cadet_branch_toast_new_house_other_tt
+				}
+			}
+			send_interface_toast = {
+				type = msg_created_new_house
+				title = created_cadet_branch_toast_new_house_desc
+				left_icon = scope:new_head
+				right_icon = scope:former_house_head
+				desc = created_cadet_branch_toast_new_house_other_tt
+			}
+		}
+
+		random_artifact = {
+			limit = {
+				var:banner_dynasty ?= $CHARACTER$.dynasty
+				artifact_owner = {
+					NOT = { this = $CHARACTER$ }
+					in_diplomatic_range = $CHARACTER$
+				}
+				NOT = {
+					any_artifact_house_claimant = {
+						scope:new_house ?= this
+					}
+				}
+			}
+			save_scope_as = new_branch_dynasty_banner
+			scope:new_house ?= {
+				add_house_artifact_claim = scope:new_branch_dynasty_banner
+			}
+		}
+
+		# Struggle Catalysts
+		if = {
+			limit = {
+				$CHARACTER$ =  {
+					exists = house.house_head
+					any_character_struggle	 = {
+						involvement = involved
+						phase_has_catalyst = catalyst_cadet_branch_created
+					}
+				}
+			}
+			every_character_struggle = {
+				involvement = involved
+				activate_struggle_catalyst = {
+					catalyst = catalyst_cadet_branch_created
+					character = $CHARACTER$
+				}
+				log_debug_variable_for_persian_struggle_effect = { VAR = unrest_catalyst_cadet_branch_created }
+			}
+		}
+
+		if = {
+			limit = { exists = scope:new_house }
+			every_child = {
+				limit = {
+					has_trait = bastard
+					is_lowborn = no
+					dynasty = scope:new_head.dynasty
+					house = scope:new_house
+				}
+				set_house = scope:new_house
+			}
+		}
+
+		# If eligible, create a cadet branch for admin type governments
+		if = {
+			limit = {
+				government_allows = noble_families
+				trigger_if = {
+					limit = { government_has_mechanic = administrative }
+					highest_held_title_tier >= min_appointment_tier
+				}
+			}
+			create_noble_family_effect = { GOVERNMENT_GIVER = this }
+			if = {
+				limit = { government_has_flag = government_has_influence }
+				change_influence = major_influence_gain
+			}
+		}
+	}
+}

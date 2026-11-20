@@ -1,0 +1,22 @@
+﻿gdp_sponsor_merchant_company_candidate_trigger = {
+	is_courtier_of = $SPONSOR$
+	# Test the prospective founder, not the sponsor. Shared by the picker and event.
+	ccb_merchant_creation_allowed_trigger = yes
+	is_ruler = no
+	is_lowborn = no
+	location ?= $SPONSOR$.capital_province
+	is_travelling = no
+	is_available_quick = {
+		adult = yes
+		incapable = no
+		imprisoned = no
+	}
+	health >= fine_health
+	NOR = {
+		any_heir_title = { }
+		is_parent_of = $SPONSOR$
+		is_child_of = $SPONSOR$
+		is_sibling_of = $SPONSOR$
+		is_consort_of = $SPONSOR$
+	}
+}

@@ -1,0 +1,1090 @@
+﻿merchant_purchase_land_interaction = {
+	category = interaction_category_diplomacy
+	filter_tags = { market_owner }
+	interface_priority = 30
+	icon = purchase_land_interaction
+	desc = merchant_purchase_land_interaction_desc
+	target_type = title
+	target_filter = recipient_de_jure_titles
+
+	cooldown_against_recipient = { years = 10 }
+
+	notification_text = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					scope:noble_standing = no
+					scope:independent = yes
+				}
+				desc = PURCHASE_LAND_PROPOSAL_MERCHANT_REPUBLIC
+			}
+			triggered_desc = {
+				trigger = { scope:noble_standing = no }
+				desc = PURCHASE_LAND_PROPOSAL_MERCHANT_REPUBLIC_VASSAL
+			}
+			triggered_desc = {
+				trigger = {
+					scope:recipient.top_liege != this
+					scope:target = {
+						trigger_if = {
+							limit = { tier = tier_duchy }
+							scope:recipient.highest_held_title_tier = tier_duchy
+						}
+						trigger_else = { scope:recipient.highest_held_title_tier = tier_county }
+					}
+				}
+				desc = PURCHASE_LAND_PROPOSAL_FELLOW_VASSAL
+			}
+			triggered_desc = {
+				trigger = {
+					scope:target = {
+						trigger_if = {
+							limit = { tier = tier_duchy }
+							scope:recipient.highest_held_title_tier >= tier_kingdom
+						}
+						trigger_else = { scope:recipient.highest_held_title_tier >= tier_duchy }
+					}
+				}
+				desc = PURCHASE_LAND_PROPOSAL_LIEGE
+			}
+			desc = PURCHASE_LAND_PROPOSAL
+		}
+	}
+
+	popup_on_receive = yes
+	pause_on_receive = yes
+
+	interface_priority = 60
+	ai_min_reply_days = 4
+	ai_max_reply_days = 9
+	greeting = positive
+
+	send_options_exclusive = no
+
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 120 # Merchant tier
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	is_available = {
+		government_has_flag = government_is_merchant
+	}
+
+	is_shown = {
+		scope:actor = {
+			this != scope:recipient
+		}
+		scope:recipient = {
+			is_landed = yes
+			# Need to own the land/cannot directly buy a governorship (merchant_procure_estate_interaction first)
+			NOR = {
+				government_has_flag = government_is_administrative
+				government_has_flag = government_is_japan_administrative
+				government_has_flag = government_is_japan_feudal
+				government_has_flag = government_is_celestial
+				government_has_flag = government_is_meritocratic
+				government_has_flag = government_is_republic # use merchant_join_republic_interaction instead
+			}
+		}
+	}
+
+	has_valid_target = {
+		custom_tooltip = { #prevent unwanted trigger tooltip
+			text = blank_line
+			scope:target ?= { is_purchasable_title_trigger = yes }
+		}
+	}
+
+	send_option = {
+		flag = offer_gold
+		is_valid = {
+			scope:forgive_loan = no
+		}
+		localization = purchase_land_interaction_offer_gold
+		current_description = purchase_land_interaction_offer_gold_desc
+	}
+
+	send_option = {
+		is_shown = {
+			scope:recipient = {
+				any_owned_story = {
+					story_type = story_cycle_loan
+					var:lender ?= scope:actor
+				}
+			}
+		}
+		is_valid = {
+			scope:offer_gold = no
+			scope:hook = no # loan gives a hook
+			scope:recipient = {
+				any_owned_story = {
+					story_type = story_cycle_loan
+					var:lender ?= scope:actor
+				}
+			}
+		}
+		flag = forgive_loan
+		localization = GENERIC_FORGIVE_LOAN
+		current_description = merchant_purchase_land_interaction_forgive_loan_desc
+	}
+
+	send_option = {
+		flag = hook
+		is_valid = {
+			scope:actor = { has_usable_hook = scope:recipient }
+			scope:forgive_loan = no # loan gives a hook
+		}
+		localization = GENERIC_SPEND_A_HOOK
+	}
+
+	send_option = {
+		flag = offer_hook
+		is_valid = {
+			NOT = { scope:recipient = { has_usable_hook = scope:actor } }
+		}
+		localization = purchase_land_interaction_offer_hook
+		current_description = purchase_land_interaction_offer_hook_desc
+	}
+
+	send_option = {
+		flag = vassal_obligation
+		is_shown = {
+			scope:recipient = { government_has_flag = government_is_feudal }
+		}
+		is_valid = {
+			custom_tooltip = {
+				text = purchase_land_vassal_obligation_republic_tt
+				scope:noble_standing = yes
+			}
+		}
+		localization = purchase_land_interaction_offer_obligations
+		current_description = purchase_land_interaction_offer_obligations_desc
+	}
+
+	send_option = {
+		flag = noble_standing
+		is_valid = {
+			custom_tooltip = {
+				text = unity_merchant_can_petition_for_noble_standing_tt
+				scope:actor = {
+					house ?= { has_house_unity_parameter = unity_merchant_can_petition_for_noble_standing }
+				}
+			}
+		}
+		can_invalidate_interaction = yes
+		localization = merchant_purchase_land_interaction_noble_standing
+		current_description = merchant_purchase_land_interaction_noble_standing_desc
+	}
+
+	send_option = {
+		flag = independent
+		is_valid = {
+			custom_tooltip = {
+				text = purchase_land_independent_republic_tt
+				scope:noble_standing = no
+			}
+			custom_tooltip = {
+				text = purchase_land_independent_top_liege_tt
+				scope:recipient.top_liege = scope:recipient
+			}
+		}
+		localization = merchant_purchase_land_interaction_independent
+		current_description = merchant_purchase_land_interaction_independent_desc
+	}
+
+	can_be_picked_title = {
+		is_title_purchasable_shared_trigger = {
+			TITLE = scope:target
+			BUYER = scope:actor
+			SELLER = scope:recipient
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		# Only the republican purchase needs this check; noble standing keeps its route.
+		trigger_if = {
+			limit = { scope:noble_standing = no }
+			scope:actor = { ccb_republic_creation_allowed_trigger = yes }
+		}
+		custom_tooltip = {
+			text = purchase_land_no_land_tt
+			scope:recipient = {
+				any_held_title = { is_purchasable_title_trigger = yes }
+			}
+		}
+		scope:actor = {
+			top_liege = this
+			prestige_level >= 2
+			custom_tooltip = {
+				text = merchant_purchase_land_interaction_patron_tt
+				domicile.domicile_location.barony.trade_market ?= {
+					save_temporary_scope_as = company_market_temp
+				}
+				scope:recipient = {
+					any_held_county = {
+						is_landless_type_title = no
+						any_county_province = {
+							barony.trade_market ?= scope:company_market_temp
+						}
+					}
+				}
+			}
+		}
+		trigger_if = {
+			limit = { scope:noble_standing = yes }
+			custom_tooltip = {
+				text = unity_merchant_can_petition_for_noble_standing_tt
+				scope:actor = {
+					house ?= { has_house_unity_parameter = unity_merchant_can_petition_for_noble_standing }
+				}
+			}
+		}
+		# Title holder, tier, and type checks
+		trigger_if = {
+			limit = { exists = scope:target }
+			is_title_purchase_valid_shared_trigger = {
+				TITLE = scope:target
+				BUYER = scope:actor
+				SELLER = scope:recipient
+			}
+		}
+		# Can only purchase counties for republics
+		trigger_if = {
+			limit = {
+				exists = scope:target
+				scope:noble_standing = no
+				scope:target.tier != tier_county
+			}
+			custom_description = {
+				text = purchase_land_must_be_county_tt
+				scope:target.tier = tier_county
+			}
+		}
+		# Vassal republics are duchies, so they need a liege of kingdom rank or higher
+		# Count and duke sellers hand the republic to that liege
+		trigger_if = {
+			limit = {
+				exists = scope:target
+				scope:noble_standing = no
+				scope:independent = no
+			}
+			custom_description = {
+				text = purchase_land_republic_king_vassal_tt
+				object = scope:recipient.top_liege
+				scope:recipient.top_liege.highest_held_title_tier >= tier_kingdom
+			}
+		}
+		# Republics can only be founded in castle/city holdings, tribal holdings are converted on purchase
+		trigger_if = {
+			limit = {
+				scope:noble_standing = no
+				exists = scope:target.title_province
+			}
+			custom_description = {
+				text = purchase_land_republic_holding_tt
+				scope:target.title_province = {
+					OR = {
+						has_holding_type = castle_holding
+						has_holding_type = city_holding
+						has_holding_type = tribal_holding
+					}
+				}
+			}
+		}
+	}
+
+	cost = {
+		gold = merchant_purchase_land_total_cost_value
+	}
+
+	on_accept = {
+		# Shared purchase land effects and events read scope:republic
+		if = {
+			limit = { scope:noble_standing = yes }
+			save_scope_value_as = {
+				name = republic
+				value = no
+			}
+		}
+		else = {
+			save_scope_value_as = {
+				name = republic
+				value = yes
+			}
+		}
+		save_scope_as = merchant
+		purchase_land_interaction_save_scopes_effect = yes
+		if = {
+			limit = { always = scope:hook }
+			scope:actor = { use_hook = scope:recipient }
+		}
+		show_as_tooltip = {
+			purchase_land_interaction_shortened_effect = {
+				TITLE_RECEIVER = scope:actor
+				TITLE_GIVER = scope:recipient
+			}
+			gdp_merchant_feudalize_purchased_tribal_land_effect = yes
+		}
+		hidden_effect = {
+			scope:recipient = { add_gold = scope:purchase_land_cost }
+		}
+		scope:actor = {
+			if = {
+				limit = { scope:noble_standing = no }
+				trigger_event = gdp_merchant.0101
+			}
+			else = { trigger_event = ep3_laamps.0100 }
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			add_gold = merchant_purchase_land_total_cost_value
+			if = {
+				limit = { scope:noble_standing = no }
+				trigger_event = gdp_merchant.0103
+			}
+			else = { trigger_event = ep3_laamps.0102 }
+		}
+	}
+
+	ai_targets = {
+		ai_recipients = suzerain
+	}
+
+	ai_accept = {
+		base = 0 # Try to make it 0 for most interactions
+		opinion_modifier = { # Opinion Factor
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 1
+			desc = AI_OPINION_REASON
+		}
+		modifier = { # Num of counties/duchy
+			add = {
+				value = 0
+				scope:target = {
+					if = {
+						limit = { tier = tier_county }
+						add = -30
+					}
+					else = {
+						add = -60
+						every_de_jure_county = {
+							limit = { ep3_purchase_land_valid_county_trigger = yes }
+							add = -30
+						}
+					}
+				}
+			}
+			desc = PURCHASE_LAND_NUM_TITLES_REASON
+		}
+		modifier = { # Too close to capital
+			add = -50
+			desc = PURCHASE_LAND_DE_JURE_DUCHY_REASON
+			scope:target.duchy = scope:recipient.capital_county.duchy
+		}
+		modifier = { # Province value
+			add = {
+				value = 0
+				scope:target = {
+					if = {
+						limit = { tier = tier_county }
+						add = prosperity_level
+						every_county_province = { add = num_buildings }
+					}
+					else = {
+						every_de_jure_county = {
+							limit = { ep3_purchase_land_valid_county_trigger = yes }
+							add = prosperity_level
+							every_county_province = { add = num_buildings }
+						}
+					}
+				}
+				multiply = -2
+			}
+			#add = 1
+			desc = PURCHASE_LAND_VALUE_REASON
+		}
+		modifier = { # Land is foreign
+			add = 10
+			desc = PURCHASE_LAND_FOREIGN_COUNTY_CULTURE_REASON
+			add = {
+				value = 0
+				scope:target = {
+					if = {
+						limit = { tier = tier_county }
+						add = 10
+					}
+					else = {
+						every_de_jure_county = {
+							limit = {
+								ep3_purchase_land_valid_county_trigger = yes
+								culture != scope:recipient.culture
+							}
+							add = 10
+						}
+					}
+				}
+				max = 30
+			}
+			desc = PURCHASE_LAND_FOREIGN_CULTURE_REASON
+			scope:target = {
+				trigger_if = {
+					limit = { tier = tier_county }
+					culture != scope:recipient.culture
+				}
+				trigger_else = {
+					any_de_jure_county = {
+						ep3_purchase_land_valid_county_trigger = yes
+						culture != scope:recipient.culture
+					}
+				}
+			}
+		}
+		modifier = { # Different faith
+			add = {
+				value = 0
+				scope:target = {
+					if = {
+						limit = { tier = tier_county }
+						add = 10
+					}
+					else = {
+						every_de_jure_county = {
+							limit = {
+								ep3_purchase_land_valid_county_trigger = yes
+								faith != scope:recipient.faith
+							}
+							add = 10
+						}
+					}
+				}
+				max = 30
+			}
+			desc = PURCHASE_LAND_DIFFERENT_FAITH_REASON
+			scope:target = {
+				trigger_if = {
+					limit = { tier = tier_county }
+					faith != scope:recipient.faith
+				}
+				trigger_else = {
+					any_de_jure_county = {
+						ep3_purchase_land_valid_county_trigger = yes
+						faith != scope:recipient.faith
+					}
+				}
+			}
+		}
+		modifier = { # My culture's lands
+			add = {
+				value = 0
+				if = {
+					limit = { scope:target.tier = tier_county }
+					add = -40
+				}
+				else = {
+					scope:target = {
+						every_de_jure_county = {
+							limit = {
+								ep3_purchase_land_valid_county_trigger = yes
+								culture != scope:recipient.culture
+							}
+							add = -40
+						}
+					}
+				}
+				if = {
+					limit = { scope:acceptance != 0 }
+					divide = scope:acceptance
+				}
+				multiply = 2
+				min = -200
+			}
+			desc = PURCHASE_LAND_MY_CULTURE_REASON
+			scope:actor.culture != scope:recipient.culture
+			trigger_if = {
+				limit = {
+					scope:target.tier = tier_county
+				}
+				scope:target.culture = scope:recipient.culture
+			}
+			trigger_else = {
+				scope:target = {
+					any_de_jure_county = {
+						ep3_purchase_land_valid_county_trigger = yes
+						culture = scope:recipient.culture
+					}
+				}
+			}
+			scope:recipient.culture = {
+				save_temporary_scope_value_as = {
+					name = acceptance
+					value = {
+						value = "cultural_acceptance(scope:actor.culture)"
+						divide = 25
+						ceiling = yes
+					}
+				}
+			}
+		}
+		modifier = { # My faith's lands
+			add = {
+				value = 0
+				if = {
+					limit = { scope:target.tier = tier_county }
+					add = -40
+				}
+				else = {
+					scope:target = {
+						every_de_jure_county = {
+							limit = {
+								ep3_purchase_land_valid_county_trigger = yes
+								faith != scope:recipient.faith
+							}
+							add = -40
+						}
+					}
+				}
+				if = {
+					limit = { scope:hostility != 0 }
+					multiply = scope:hostility
+				}
+				multiply = 2
+				min = -200
+			}
+			desc = PURCHASE_LAND_MY_FAITH_REASON
+			scope:actor.faith != scope:recipient.faith
+			trigger_if = {
+				limit = { scope:target.tier = tier_county }
+				scope:target.faith = scope:recipient.faith
+			}
+			trigger_else = {
+				scope:target = {
+					any_de_jure_county = {
+						ep3_purchase_land_valid_county_trigger = yes
+						faith = scope:recipient.faith
+					}
+				}
+			}
+			scope:recipient.faith = {
+				save_temporary_scope_value_as = {
+					name = hostility
+					value = "faith_hostility_level(scope:actor.faith)"
+				}
+			}
+		}
+		modifier = { # Too close
+			add = {
+				value = 0
+				add = scope:distance
+				divide = scope:recipient.highest_held_title_tier
+				if = {
+					limit = { scope:distance <= squared_distance_medium }
+					multiply = -0.01
+				}
+				else = { multiply = 0.0005 }
+				min = -25
+				max = 50
+			}
+			desc = PURCHASE_LAND_DISTANCE_REASON
+			trigger_if = {
+				limit = { scope:target.tier = tier_county }
+				scope:target = { save_temporary_scope_as = distance_target }
+			}
+			trigger_else = {
+				scope:target.title_capital_county = { save_temporary_scope_as = distance_target }
+			}
+			scope:recipient.capital_county = {
+				save_temporary_scope_value_as = {
+					name = distance
+					value = "squared_distance(scope:distance_target)"
+				}
+			}
+		}
+		opinion_modifier = { # Opinion Factor of title holder
+			trigger = {
+				NOT = {
+					scope:target.holder ?= scope:recipient
+				}
+			}
+			who = scope:recipient
+			opinion_target = scope:target.holder
+			multiplier = -1
+			desc = AI_OPINION_REASON
+		}
+		modifier = {
+			add = {
+				value = scope:actor.prestige_level
+				multiply = 20
+			}
+			scope:actor.prestige_level >= 4
+			desc = PURCHASE_LAND_PRESTIGE_LEVEL_REASON
+		}
+		modifier = {
+			add = 40
+			trigger = {
+				scope:actor.culture != scope:recipient.culture
+				OR = {
+					AND = {
+						scope:target.tier = tier_county
+						scope:target.culture = scope:recipient.culture
+					}
+					scope:target = {
+						any_de_jure_county = {
+							ep3_purchase_land_valid_county_trigger = yes
+							culture = scope:recipient.culture
+						}
+					}
+				}
+			}
+			scope:actor.primary_spouse ?= {
+				culture = scope:recipient.culture
+				dynasty ?= {
+					dynasty_prestige_level >= 2
+				}
+			}
+			desc = PURCHASE_LAND_MARRIED_TO_CULTURE_NOBLE_REASON
+		}
+		modifier = {
+			add = 40
+			trigger = {
+				scope:actor.faith != scope:recipient.faith
+			}
+			scope:actor.primary_spouse ?= {
+				faith = scope:recipient.faith
+				dynasty ?= {
+					dynasty_prestige_level >= 2
+				}
+			}
+			desc = PURCHASE_LAND_MARRIED_TO_FAITH_NOBLE_REASON
+		}
+		modifier = {
+			add = 80
+			scope:actor.primary_spouse ?= {
+				house ?= scope:recipient.house
+			}
+			desc = PURCHASE_LAND_MARRIED_TO_HOUSE_REASON
+		}
+		modifier = {
+			add = 20
+			trigger = {
+				OR = {
+					AND = {
+						scope:target.tier = tier_county
+						scope:target.culture = scope:recipient.culture
+					}
+					scope:target = {
+						any_de_jure_county = {
+							ep3_purchase_land_valid_county_trigger = yes
+							culture = scope:recipient.culture
+						}
+					}
+				}
+			}
+			scope:actor = {
+				knows_language_of_culture = scope:recipient.culture
+				culture != scope:recipient.culture
+			}
+			desc = PURCHASE_LAND_SPEAKS_LANGUAGE_REASON
+		}
+		modifier = {
+			add = -40
+			scope:actor = {
+				NOT = {
+					knows_language_of_culture = scope:recipient.culture
+					culture = scope:recipient.culture
+				}
+			}
+			desc = PURCHASE_LAND_DOES_NOT_SPEAK_LANGUAGE_REASON
+		}
+		modifier = {
+			add = {
+				value = 40
+				multiply = scope:recipient.debt_level
+			}
+			trigger = {
+				scope:recipient = {
+					OR = {
+						debt_level > 0
+						treasury_debt_level > 0
+					}
+				}
+			}
+			desc = PURCHASE_LAND_IS_IN_DEBT_REASON
+		}
+		modifier = {
+			add = 60
+			scope:actor = {
+				has_any_moderate_good_relationship_with_character_trigger = { CHARACTER = scope:recipient }
+			}
+			desc = PURCHASE_LAND_RELATIONSHIP_REASON
+		}
+		modifier = {
+			add = 80
+			scope:offer_gold = yes
+			desc = PURCHASE_LAND_DOUBLE_GOLD_REASON
+		}
+		modifier = {
+			add = 160
+			scope:hook = yes
+			desc = YOU_HAVE_HOOK_REASON
+		}
+		modifier = {
+			add = 60
+			scope:offer_hook = yes
+			desc = PURCHASE_LAND_OFFER_HOOK_REASON
+		}
+		modifier = {
+			add = 80
+			scope:vassal_obligation = yes
+			desc = PURCHASE_LAND_OBLIGATIONS_REASON
+		}
+		modifier = {
+			scope:noble_standing = no
+			culture = { has_cultural_parameter = more_willing_to_create_republics }
+			add = 50
+			desc = PURCHASE_LAND_REPUBLIC_WILLING_REASON
+		}
+		modifier = {
+			scope:independent = yes
+			add = -100
+			desc = PURCHASE_LAND_INDEPENDENT_REASON
+		}
+		modifier = {
+			scope:noble_standing = no
+			scope:target.duchy ?= {
+				any_de_jure_county = {
+					this != scope:target
+					holder ?= { government_has_flag = government_is_republic }
+				}
+			}
+			add = -200
+			desc = PURCHASE_LAND_REPUBLIC_IN_DUCHY_REASON
+		}
+
+		## Dealbreaker
+		modifier = {
+			add = -100
+			desc = AI_OPINION_DEALBREAKER_ACTOR
+			scope:actor = {
+				is_known_dealbreaker_trigger = { KNOWER = scope:recipient }
+			}
+		}
+
+		## Forgive Loan
+		modifier = {
+			scope:forgive_loan = yes
+			add = {
+				value = 0
+				scope:recipient = {
+					ordered_owned_story = {
+						limit = {
+							story_type = story_cycle_loan
+							var:lender = scope:actor
+						}
+						order_by = var:years_since
+						add = {
+							value = var:amount_owed
+							divide = 5 # half as much as gold in hand
+						}
+					}
+				}
+			}
+			desc = FORGIVE_LOAN_GOLD_REASON
+		}
+		modifier = {
+			scope:forgive_loan = yes
+			add = 160
+			desc = FORGIVE_LOAN_HOOK_REASON
+		}
+	}
+
+	ai_will_do = {
+		base = -25
+		ai_value_modifier = {
+			ai_boldness = -0.5
+			ai_energy = -0.5
+			ai_greed = 0.5
+		}
+		modifier = {
+			gold < 1000
+			factor = 0
+		}
+		modifier = {
+			gold > 2000
+			add = 50
+		}
+	}
+}
+
+merchant_procure_estate_interaction = {
+	category = interaction_category_diplomacy
+	filter_tags = { market_owner }
+	interface_priority = 30
+	icon = powerful_family_shield
+	greeting = positive
+	desc = merchant_procure_estate_interaction_desc
+
+	cooldown_against_recipient = { years = 10 }
+
+	notification_text = MERCHANT_PROCURE_ESTATE_PROPOSAL
+
+	popup_on_receive = yes
+	pause_on_receive = yes
+
+	ai_min_reply_days = 4
+	ai_max_reply_days = 9
+
+	send_options_exclusive = no
+
+	ai_frequency_by_tier = {
+		barony = 0
+		county = 240 # Merchant tier
+		duchy = 0
+		kingdom = 0
+		empire = 0
+		hegemony = 0
+	}
+
+	is_available = {
+		government_has_flag = government_is_merchant
+		house ?= { has_house_unity_parameter = unity_merchant_can_petition_for_noble_standing }
+	}
+
+	is_shown = {
+		scope:actor = {
+			this != scope:recipient
+		}
+		scope:recipient = {
+			is_landed = yes
+			OR = {
+				government_has_mechanic = administrative
+				government_has_flag = government_is_japan_feudal # uses noble families but is not admin
+			}
+			government_allows = noble_families
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = { ccb_merchant_estate_allowed_trigger = yes }
+		scope:actor = {
+			top_liege = this
+			prestige_level >= 2
+			custom_tooltip = {
+				text = merchant_procure_estate_company_size_tt
+				company_size_value >= 2 # company_size_medium
+			}
+			custom_tooltip = {
+				text = merchant_procure_estate_interaction_patron_tt
+				OR = {
+					suzerain ?= scope:recipient
+					scope:recipient = { top_liege = this }
+				}
+			}
+		}
+		trigger_if = { # Only a Duke or higher can treat you right
+			limit = {
+				scope:recipient = { highest_held_title_tier < tier_duchy }
+			}
+			custom_description = {
+				text = procure_estate_low_rank_tt
+				always = no
+			}
+		}
+		trigger_if = {
+			limit = {
+				scope:actor = { is_at_war_with = scope:recipient }
+			}
+			custom_description = {
+				text = procure_estate_at_war_tt
+				always = no
+			}
+		}
+		scope:recipient = {
+			NOT = { has_strong_hook = scope:actor }
+		}
+	}
+
+	auto_accept = {
+		custom_description = {
+			text = merchant_procure_estate_hook_auto_accept_tt
+			object = scope:recipient
+			scope:hook = yes
+		}
+	}
+
+	should_use_extra_icon = {
+		scope:actor = { has_usable_hook = scope:recipient }
+	}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	send_option = {
+		flag = hook
+		is_valid = {
+			scope:actor = { has_usable_hook = scope:recipient }
+		}
+		localization = GENERIC_SPEND_A_HOOK
+	}
+
+	send_option = {
+		flag = offer_gold
+		localization = merchant_procure_estate_interaction_offer_gold
+		current_description = merchant_procure_estate_interaction_offer_gold_desc
+	}
+
+	cost = {
+		gold = {
+			add = {
+				value = scope:actor.merchant_join_realm_cost_value
+				desc = BASE
+			}
+			if = {
+				limit = { scope:offer_gold = yes }
+				multiply = 2
+			}
+		}
+	}
+
+	on_accept = {
+		if = {
+			limit = { scope:hook = yes }
+			scope:actor = { use_hook = scope:recipient }
+		}
+		scope:actor = {
+			# Entry validation precedes payment. Do not re-test rank after liquidating the company.
+			save_scope_as = ccb_authorized_founder
+			custom_tooltip = merchant_procure_estate_noble_family_tt
+			custom_tooltip = merchant_procure_estate_company_lost_tt
+			custom_tooltip = merchant_patron_arrangement_ends_tt
+			if = {
+				limit = {
+					any_in_list = { variable = owes_me_money }
+				}
+				custom_tooltip = merchant_debtors_forgiven_tt
+			}
+			if = {
+				limit = {
+					any_character_artifact = { has_variable = charter_patron }
+				}
+				custom_tooltip = merchant_procure_estate_charter_lost_tt
+			}
+			hidden_effect = {
+				gdp_merchant_procures_estate_effect = { GIVER = scope:recipient }
+				create_character_memory = {
+					type = procured_estate_memory
+					participants = { benefactor = scope:recipient }
+				}
+			}
+		}
+	}
+
+	ai_targets = {
+		ai_recipients = suzerain
+	}
+
+	ai_accept = {
+		base = -25
+		opinion_modifier = { # Opinion Factor
+			who = scope:recipient
+			opinion_target = scope:actor
+			multiplier = 1
+			desc = AI_OPINION_REASON
+		}
+		modifier = { # An outsider with no roots in the realm
+			add = -30
+			desc = MERCHANT_PROCURE_ESTATE_OUTSIDER_REASON
+			NOR = {
+				scope:actor.house ?= {
+					any_house_member = {
+						is_close_or_extended_family_of = scope:recipient
+					}
+				}
+				scope:actor = {
+					any_close_or_extended_family_member = {
+						is_close_or_extended_family_of = scope:recipient
+					}
+				}
+				scope:actor.dynasty ?= scope:recipient.dynasty
+			}
+		}
+		modifier = {
+			add = -20
+			desc = MERCHANT_PROCURE_ESTATE_STATE_FAITH_REASON
+			exists = scope:recipient.top_liege.primary_title.state_faith
+			scope:actor.faith = {
+				this != scope:recipient.top_liege.primary_title.state_faith
+			}
+		}
+		modifier = {
+			add = 10
+			desc = MERCHANT_PROCURE_ESTATE_LOCAL_CULTURE_REASON
+			scope:recipient.capital_county.culture = { this = scope:actor.culture }
+		}
+		modifier = {
+			add = {
+				value = scope:actor.dynasty.dynasty_prestige_level
+				multiply = 5
+			}
+			exists = scope:actor.dynasty
+			desc = MERCHANT_PROCURE_ESTATE_DYNASTY_REASON
+		}
+		modifier = { # A wealthy company is worth ennobling
+			add = {
+				value = scope:actor.company_size_value
+				multiply = 10
+			}
+			desc = MERCHANT_PROCURE_ESTATE_COMPANY_REASON
+		}
+		modifier = {
+			add = 60
+			scope:actor = {
+				has_any_moderate_good_relationship_with_character_trigger = { CHARACTER = scope:recipient }
+			}
+			desc = MERCHANT_PROCURE_ESTATE_RELATIONSHIP_REASON
+		}
+		modifier = {
+			add = 40
+			scope:offer_gold = yes
+			desc = PURCHASE_LAND_DOUBLE_GOLD_REASON
+		}
+		modifier = {
+			add = 160
+			scope:hook = yes
+			desc = YOU_HAVE_HOOK_REASON
+		}
+
+		## Dealbreaker
+		modifier = {
+			add = -100
+			desc = AI_OPINION_DEALBREAKER_ACTOR
+			scope:actor = {
+				is_known_dealbreaker_trigger = { KNOWER = scope:recipient }
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = -25
+		ai_value_modifier = {
+			ai_boldness = -0.5
+			ai_greed = -0.5
+		}
+		modifier = { # A struggling company is better off trading its ledgers for a name
+			add = 50
+			trade_competitiveness < 100
+		}
+		modifier = { # Already dominant, no reason to give up the company
+			add = -50
+			company_size_value >= 3
+		}
+		modifier = { # Cannot afford the buy-in
+			gold < merchant_join_realm_cost_value
+			factor = 0
+		}
+	}
+}

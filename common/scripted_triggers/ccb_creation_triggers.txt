@@ -1,0 +1,154 @@
+﻿ccb_subject_to_restrictions_trigger = {
+	trigger_if = {
+		limit = { has_game_rule = ccb_restrict_players }
+		is_ai = no
+	}
+	trigger_else_if = {
+		limit = { has_game_rule = ccb_restrict_all }
+		always = yes
+	}
+	# Missing setting retains the default: only AI is subject to extra rules.
+	trigger_else = { is_ai = yes }
+}
+
+# Each optional requirement is additive to the original entry conditions.
+ccb_optional_requirements_trigger = {
+	trigger_if = {
+		limit = { has_game_rule = ccb_independence_required }
+		is_independent_ruler = yes
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_relative_rank_higher }
+		exists = house.house_head
+		highest_held_title_tier > house.house_head.highest_held_title_tier
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_relative_rank_not_lower }
+		exists = house.house_head
+		highest_held_title_tier >= house.house_head.highest_held_title_tier
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_rank_duchy }
+		highest_held_title_tier >= tier_duchy
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_rank_empire }
+		highest_held_title_tier >= tier_empire
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_rank_kingdom }
+		highest_held_title_tier >= tier_kingdom
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_prestige_2 }
+		prestige_level >= 2
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_prestige_3 }
+		prestige_level >= 3
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_prestige_4 }
+		prestige_level >= 4
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_prestige_5 }
+		prestige_level >= 5
+	}
+}
+
+ccb_distance_exemption_trigger = {
+	has_game_rule = ccb_distance_exempt
+	exists = house.house_head
+	NOT = { in_diplomatic_range = house.house_head }
+}
+
+ccb_optional_policy_allowed_trigger = {
+	trigger_if = {
+		limit = {
+			ccb_subject_to_restrictions_trigger = yes
+			ccb_distance_exemption_trigger = no
+		}
+		ccb_optional_requirements_trigger = yes
+	}
+}
+
+ccb_creation_allowed_trigger = {
+	ccb_optional_policy_allowed_trigger = yes
+}
+
+# Controls non-decision creation. Does not impose decision-only requirements
+# (adulthood, children, succession, marriage) on wars or adoption.
+ccb_special_creation_allowed_trigger = {
+	trigger_if = {
+		limit = { has_game_rule = ccb_special_vanilla }
+		always = yes
+	}
+	trigger_if = {
+		limit = {
+			has_game_rule = ccb_special_blocked
+			ccb_subject_to_restrictions_trigger = yes
+		}
+		always = no
+	}
+	trigger_if = {
+		limit = { has_game_rule = ccb_special_follow }
+		ccb_optional_policy_allowed_trigger = yes
+	}
+}
+
+ccb_japan_fief_allowed_trigger = {
+	trigger_if = {
+		limit = {
+			is_house_head = no
+			tgp_japan_cadet_creates_dynasty_trigger = no
+		}
+		custom_tooltip = {
+			text = ccb_special_policy_tt
+			ccb_special_creation_allowed_trigger = yes
+		}
+	}
+}
+
+# Character scope: the adventurer buying an estate.
+ccb_estate_allowed_trigger = {
+	trigger_if = {
+		limit = {
+			OR = {
+				# The explicit branch in procure_estate_interaction_effect.
+				house ?= {
+					any_house_member = {
+						any_held_title = { is_noble_family_title = yes }
+						top_liege = scope:recipient.top_liege
+					}
+				}
+				AND = {
+					exists = house.house_head
+					is_house_head = no
+					# Otherwise create_noble_family_effect can take over the old house.
+					# The adventurer still has their camp and current liege at this point.
+					NOT = {
+						house.house_head = {
+							is_ai = yes
+							NOT = { any_held_title = { is_noble_family_title = yes } }
+							OR = {
+								NOT = { exists = liege }
+								AND = {
+									top_liege = scope:actor.top_liege
+									OR = {
+										is_ruler = no
+										highest_held_title_tier < scope:actor.highest_held_title_tier
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		custom_tooltip = {
+			text = ccb_special_policy_tt
+			ccb_special_creation_allowed_trigger = yes
+		}
+	}
+}

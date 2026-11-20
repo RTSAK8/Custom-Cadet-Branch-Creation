@@ -1,0 +1,757 @@
+﻿namespace = tgp_japan_yearly_events
+
+scripted_effect ccb_japan_create_cadet_house_effect = {
+	save_scope_as = ccb_authorized_founder
+	add_character_flag = found_cadet_branch
+	add_trait = disinherited
+	trigger_event = tgp_japan_decision.9001
+}
+
+tgp_japan_yearly_events.1210 = {
+	id_override_priority = 10
+	type = character_event
+	title = tgp_japan_yearly_events.1210.t
+	desc = {
+		desc = tgp_japan_yearly_events.1210.desc.intro
+		random_valid = {
+			#low prowess house head
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:weak_prowess }
+				desc = tgp_japan_yearly_events.1210.desc.reason_weak_prowess
+			}
+			#Unhealthy house head
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:bad_health }
+				desc = tgp_japan_yearly_events.1210.desc.reason_bad_health
+			}
+			#drunk house head
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:drunkard }
+				desc = tgp_japan_yearly_events.1210.desc.reason_drunkard
+			}
+			#bad genetics
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:bad_genetic }
+				desc = tgp_japan_yearly_events.1210.desc.bad_genetic
+			}
+			#sinful
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:sinful }
+				desc = tgp_japan_yearly_events.1210.desc.sinful
+			}
+			#low legitimacy
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:low_legitimacy }
+				desc = tgp_japan_yearly_events.1210.desc.low_legitimacy
+			}
+			#older sibling
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:older_sibling }
+				desc = tgp_japan_yearly_events.1210.desc.older_sibling
+			}
+			#illegitimized
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:illegitimized }
+				desc = tgp_japan_yearly_events.1210.desc.illegitimized
+			}
+
+			#child of a concubine
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:concubine_child  }
+				desc = tgp_japan_yearly_events.1210.desc.concubine_child
+			}
+			#Wrong Gender
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:non_dominant_gender }
+				desc = tgp_japan_yearly_events.1210.desc.reason_non_dominant_gender
+			}
+			#Fallback
+			triggered_desc = {
+				trigger = { scope:reason ?= flag:fallback }
+				desc = tgp_japan_yearly_events.1210.desc.reason_fallback
+			}
+		}
+		desc = tgp_japan_yearly_events.1210.desc.outro
+	}
+	theme = dynasty
+	cooldown = { years = 20 }
+	override_background = {
+		reference = throne_room
+	}
+	#You, the Contested House Head
+	left_portrait = {
+		character = scope:new_house_head
+		animation = disgust
+		camera = camera_event_crowd
+	}
+
+	#The person contesting your place as house head
+	right_portrait = {
+		character = scope:contester
+		animation = debating
+	}
+	trigger = {
+		has_tgp_dlc_trigger = yes
+		is_available_adult = yes
+		government_is_japanese_trigger = yes
+		is_house_head = yes
+		has_domicile = yes
+		is_independent_ruler = no
+		any_close_or_extended_family_member = {
+			is_available_ai_adult = yes
+			#make sure they live in japan
+			top_liege ?= root.top_liege
+			is_house_head = no
+			house = root.house
+			# Dominant gender
+			can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+			#if it's your kid, stricter requirements
+			trigger_if = {
+				limit = {
+					is_child_of = root
+				}
+				#you're too old, become a monk!
+				root.age > 60
+				#he hates you
+				opinion = { target = root value <= low_positive_opinion  }
+				#he's a little shit
+				OR = {
+					has_trait = ambitious
+					has_trait = arrogant
+				}
+			}
+			#not a friendly with you
+			NOR = {
+				has_trait = loyal
+				has_friendly_relationship_trigger = { CHARACTER = root }
+				this = root
+				has_trait = humble
+				has_trait = content
+				has_trait = devoted
+			}
+		}
+	}
+	immediate = {
+		#This is root
+		save_scope_as = new_house_head
+		#find a contester
+		random_close_or_extended_family_member = {
+			limit = {
+				is_available_ai_adult = yes
+				#make sure they live in japan
+				top_liege ?= root.top_liege
+				is_house_head = no
+				house = root.house
+				# Dominant gender
+				can_be_combatant_based_on_gender_trigger = { ARMY_OWNER = root }
+				#if it's your kid, stricter requirements
+				trigger_if = {
+					limit = {
+						is_child_of = root
+					}
+					#you're too old, become a monk!
+					root.age > 60
+					#he hates you
+					opinion = { target = root value <= low_positive_opinion  }
+					#he's a little shit
+					OR = {
+						has_trait = ambitious
+						has_trait = arrogant
+					}
+				}
+				#not a friendly with you
+				NOR = {
+					has_trait = loyal
+					has_friendly_relationship_trigger = { CHARACTER = root }
+					this = root
+					has_trait = humble
+					has_trait = content
+					has_trait = devoted
+				}
+			}
+			weight = {
+				base = 1
+				modifier = {
+					has_trait = ambitious
+					add = 20
+				}
+				modifier = {
+					has_trait = arrogant
+					add = 20
+				}
+				modifier = {
+					has_trait = lazy
+					add = -10
+				}
+				modifier = {
+					is_close_family_of = scope:new_house_head
+					add = 40
+				}
+				modifier = {
+					is_child_of = scope:new_house_head
+					add = -50
+				}
+			}
+			save_scope_as = contester
+		}
+		if = {
+			limit = {
+				any_held_county = {
+					count > 1
+					is_landless_type_title = no
+				}
+			}
+			ordered_held_county = {
+				limit = {
+					is_landless_type_title = no
+					NOT = { this = root.capital_county }
+				}
+				order_by = {
+					value = 0
+					subtract = title_province.num_buildings
+				}
+				save_scope_as = gift_county
+			}
+		}
+		#reason for being challenged as house head
+		random_list = {
+			#low prowess
+			100 = {
+				trigger = {
+					prowess < scope:contester.prowess
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:weak_prowess
+				}
+			}
+			#Unhealthy house head
+			100 = {
+				trigger = {
+					is_healthy = no
+					NOT = {
+							scope:contester = {
+								is_healthy = no
+						}
+					}
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:bad_health
+				}
+			}
+			#drunk house head
+			100 = {
+				trigger = {
+					has_trait = drunkard
+					NOT = {
+							scope:contester = {
+								has_trait = drunkard
+						}
+					}
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:drunkard
+				}
+			}
+			#bad congenital traits
+			100 = {
+				trigger = {
+					num_of_bad_genetic_traits > scope:contester.num_of_bad_genetic_traits
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:bad_genetic
+				}
+			}
+			#low legitimacy
+			100 = {
+				trigger = {
+					has_legitimacy = yes
+					legitimacy < 3
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:low_legitimacy
+				}
+			}
+			#sinful traits
+			100 = {
+				trigger = {
+					num_sinful_traits > scope:contester.num_sinful_traits
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:sinful
+				}
+			}
+			100 = {
+				trigger = {
+					OR = {
+						has_trait = child_of_concubine
+						has_trait = child_of_concubine_female
+					}
+					NOR = {
+						scope:contester = {
+							has_trait = child_of_concubine
+							has_trait = child_of_concubine_female
+						}
+					}
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:concubine_child
+				}
+			}
+			#find an older sibling who is the right gender to inherit
+			100 = {
+				trigger = {
+					scope:contester = {
+						is_sibling_of = scope:new_house_head
+						age > scope:new_house_head.age
+						trigger_if = {
+							limit = { is_male = yes }
+							scope:new_house_head = {
+								OR = {
+									has_realm_law = male_only_law
+									has_realm_law = male_preference_law
+								}
+							}
+						}
+						trigger_else = {
+							scope:new_house_head = {
+								OR = {
+									has_realm_law = female_only_law
+									has_realm_law = female_preference_law
+								}
+							}
+						}
+					}
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:older_sibling
+				}
+			}
+
+			#house head was illegitimized
+			100 = {
+				trigger = {
+					OR = {
+						AND = {
+							has_trait = bastard
+							scope:new_house_head = {
+								rite = { NOT = { rite_has_doctrine = doctrine_bastardry_none } }
+							}
+						}
+						has_trait = denounced
+						has_trait = disinherited
+						has_trait = adopted_no_inheritance
+					}
+					scope:contester = {
+						NOR = {
+							AND = {
+								has_trait = bastard
+								scope:new_house_head = {
+									rite = { NOT = { rite_has_doctrine = doctrine_bastardry_none } }
+								}
+							}
+							has_trait = denounced
+							has_trait = disinherited
+							has_trait = adopted_no_inheritance
+						}
+					}
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:illegitimized
+				}
+			}
+			#wrong gender
+			100 = {
+				trigger = {
+					OR = {
+						AND = {
+							is_male = yes
+							OR = {
+								has_realm_law = female_only_law
+								has_realm_law = female_preference_law
+							}
+						}
+						AND = {
+							is_female = yes
+							OR = {
+								has_realm_law = male_only_law
+								has_realm_law = male_preference_law
+							}
+						}
+					}
+					scope:contester = {
+						OR = {
+							AND = {
+								is_male = no
+								OR = {
+									has_realm_law = female_only_law
+									has_realm_law = female_preference_law
+								}
+							}
+							AND = {
+								is_female = no
+								OR = {
+									has_realm_law = male_only_law
+									has_realm_law = male_preference_law
+								}
+							}
+						}
+					}
+				}
+				save_scope_value_as = {
+					name = reason
+					value = flag:non_dominant_gender
+				}
+			}
+			#fallback
+			1 = {
+				save_scope_value_as = {
+					name = reason
+					value = flag:fallback
+				}
+			}
+		}
+	}
+	# a) Rebuke this outrageous claim!
+	option = {
+		name = tgp_japan_yearly_events.1210.a
+		#You gain Prestige and Dread
+		add_prestige = medium_prestige_gain
+		add_dread =	 medium_dread_gain
+		#Contester doesn't like you
+		scope:contester = {
+			#They go to the pool if they're your courtier
+			if = {
+				limit = {
+					is_courtier_of = scope:new_house_head
+				}
+				move_to_pool = yes
+			}
+			#their family is upset by contester's departure
+			if = {
+				limit = {
+					scope:contester = {
+						NOT = { is_close_family_of = root }
+					}
+				}
+				every_close_family_member = {
+					custom = all_family_members
+					limit = {
+						scope:new_house_head != this
+					}
+					add_opinion = {
+						modifier = sullied_our_house_opinion
+						target = scope:new_house_head
+					}
+				}
+			}
+			#If possible it progresses rivalry
+			if = {
+				limit = {
+					can_set_relation_rival_trigger = { CHARACTER = scope:new_house_head }
+				}
+				progress_towards_rival_effect = {
+					REASON = rival_challenged_house_head_status
+					CHARACTER = scope:new_house_head
+					OPINION = default_rival_opinion
+				}
+			}
+			#otherwise it makes them like you even less
+			else = {
+				add_opinion = {
+					target = scope:new_house_head
+					modifier = humbled_opinion
+					opinion = -60
+				}
+			}
+		}
+		stress_and_fulfillment_impact = {
+			craven = minor_stress_impact_gain
+			humble = minor_stress_impact_gain
+			just = medium_stress_impact_loss
+			callous = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 0
+				has_trait = craven
+				has_trait = humble
+			}
+		}
+	}
+	#b) Compromise by giving them a cadet branch with modifier that has has friendly house relations
+	option = {
+		name = tgp_japan_yearly_events.1210.b
+		flavor = tgp_japan_yearly_events.1210.b.flavor
+		trigger = {
+			exists = scope:gift_county
+			scope:contester = { ccb_special_creation_allowed_trigger = yes }
+		}
+		#You gain Piety
+		add_piety = medium_piety_gain
+		# Give land
+		create_title_and_vassal_change = {
+			type = granted
+			save_scope_as = change
+			add_claim_on_loss = no
+		}
+		scope:gift_county = {
+			change_title_holder = {
+				holder = scope:contester
+				change = scope:change
+			}
+		}
+		resolve_title_and_vassal_change = scope:change
+		#Contester gets cadet branch and likes you
+		scope:contester = {
+			custom_tooltip = {
+				text = tgp_japan_yearly_events.1210.b.tt
+				ccb_japan_create_cadet_house_effect = yes
+				create_noble_family_effect = { GOVERNMENT_GIVER = root }
+				house = {
+					set_house_relation = {
+						target = scope:new_house_head.house
+						level = friendly
+						description = house_relation_friendly_reason_cadet_branch_permission_desc
+					}
+				}
+			}
+			add_opinion = {
+				target = scope:new_house_head
+				modifier = respect_opinion
+				opinion = low_positive_opinion
+			}
+			if = {
+				limit = {
+					scope:contester = {
+						NOT = { is_close_family_of = root }
+					}
+				}
+				#their family appreciates your kindness
+				every_close_family_member = {
+					custom = all_family_members
+					limit = {
+						scope:new_house_head != this
+					}
+					add_opinion = {
+						modifier = kindness_opinion
+						target = scope:new_house_head
+						opinion = 35
+					}
+				}
+			}
+		}
+		stress_and_fulfillment_impact = {
+			ambitious = minor_stress_impact_gain
+			arrogant = minor_stress_impact_gain
+			content = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				factor = 0
+				has_trait = ambitious
+				has_trait = arrogant
+			}
+			modifier = {
+				top_liege = {
+					any_vassal = {
+						count >= 100
+						is_landed = no
+					}
+				}
+				factor = 0
+			}
+		}
+	}
+	#c) Smooth it over
+	option = {
+		name = tgp_japan_yearly_events.1210.c
+		add_diplomacy_lifestyle_xp = medium_lifestyle_experience
+
+		#Diplomacy Challenge
+		duel = {
+			skill = diplomacy
+			value = high_skill_rating
+			# Good outcome!
+			50 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = 3.5
+					min = -49
+				}
+				min = 5
+				desc = tgp_japan_yearly_events.1210.c.good
+				send_interface_toast = {
+					title = tgp_japan_yearly_events.1210.c.good
+					change_influence = major_influence_gain
+					house = {
+						every_house_member = {
+							custom = tgp_japan_yearly_events.1210.c.good.tt
+							limit = {
+								NOT = { this = root }
+							}
+							add_opinion = {
+								target = root
+								modifier = respect_opinion
+								opinion = 20
+							}
+						}
+					}
+					scope:contester = {
+						add_opinion = {
+							target = root
+							modifier = respect_opinion
+							opinion = 30
+						}
+					}
+				}
+			}
+			# Mid outcome.
+			40 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				min = 5
+				desc = tgp_japan_yearly_events.1210.c.bad
+				send_interface_toast = {
+					title = tgp_japan_yearly_events.1210.c.bad
+					pay_short_term_gold = {
+						target = scope:contester
+						gold = minor_gold_value
+					}
+					scope:contester = {
+						add_opinion = {
+							target = root
+							modifier = respect_opinion
+							opinion = 15
+						}
+					}
+				}
+			}
+			10 = {
+				compare_modifier = {
+					value = scope:duel_value
+					multiplier = -3.5
+					min = -49
+				}
+				min = 5
+				desc = tgp_japan_yearly_events.1210.c.ugly
+				send_interface_toast = {
+					title = tgp_japan_yearly_events.1210.c.ugly
+					add_prestige = medium_prestige_loss
+					scope:contester = {
+					#You really put your foot in it, nemesis time
+						if = {
+							limit = {
+								can_set_relation_nemesis_trigger = { CHARACTER = scope:new_house_head }
+							}
+							set_relation_nemesis_effect = {
+								TARGET = scope:new_house_head
+								REASON = rival_challenged_house_head_status
+							}
+						}
+						#If you already have a nemesis, it's possible it progresses rivalry
+						else_if = {
+							limit = {
+								can_set_relation_rival_trigger = { CHARACTER = scope:new_house_head }
+							}
+							progress_towards_rival_effect = {
+								REASON = rival_challenged_house_head_status
+								CHARACTER = scope:new_house_head
+								OPINION = default_rival_opinion
+							}
+						}
+						#otherwise it makes them like you even less
+						else = {
+							add_opinion = {
+								target = scope:new_house_head
+								modifier = humbled_opinion
+								opinion = -60
+							}
+						}
+					}
+				}
+			}
+		}
+		stress_and_fulfillment_impact = {
+			impatient = minor_stress_impact_gain
+			arrogant = minor_stress_impact_gain
+			shy = minor_stress_impact_gain
+			trusting = minor_stress_impact_gain
+			patient = medium_stress_impact_loss
+		}
+		ai_chance = {
+			base = 100
+			modifier = {
+				factor = 0
+				has_trait = impatient
+				has_trait = arrogant
+				has_trait = shy
+			}
+		}
+	}
+	#d) Ignore it.
+	option = {
+		name = tgp_japan_yearly_events.1210.d
+		trigger = { scope:contester = { ccb_special_creation_allowed_trigger = yes } }
+		flavor = tgp_japan_yearly_events.1210.d.flavor
+		#You gain influence and prestige
+		change_influence = minor_influence_gain
+		add_prestige = minor_prestige_gain
+		#Contester gets cadet branch and dislikes you
+		scope:contester = {
+			custom_tooltip = {
+				text = tgp_japan_yearly_events.1210.d.tt
+				ccb_japan_create_cadet_house_effect = yes
+				create_noble_family_effect = { GOVERNMENT_GIVER = root }
+				house = {
+					set_house_relation = {
+						target = scope:new_house_head.house
+						level = quarrel
+						description = house_relation_quarrel_reason_cadet_branch_permission_desc
+					}
+				}
+			}
+			add_opinion = {
+				target = scope:new_house_head
+				modifier = angry_opinion
+				opinion = low_negative_opinion
+			}
+		}
+		stress_and_fulfillment_impact = {
+			ambitious = minor_stress_impact_gain
+			arrogant = minor_stress_impact_gain
+			content = minor_stress_impact_loss
+			lazy = minor_stress_impact_loss
+		}
+		ai_chance = {
+			base = 25
+			modifier = {
+				factor = 0
+				has_trait = ambitious
+				has_trait = arrogant
+			}
+			modifier = {
+				top_liege = {
+					any_vassal = {
+						count >= 100
+						is_landed = no
+					}
+				}
+				factor = 0
+			}
+		}
+	}
+}
